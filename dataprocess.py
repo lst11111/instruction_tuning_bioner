@@ -44,7 +44,7 @@ class NERDataset(Dataset):
             labels_text = self.assistant_format.format(content = labels)
             systems.append(systems_text)##带有模板的指令
             texts.append(input_text)##带有模板的问题
-            outputs.append(labels_text)##带有模板的回答 每个模板都是i am start and i am end 
+            outputs.append(labels_text)##带有模板的回答
        
         
         ##训练的时候需要对整个进行tokenizer操作
@@ -60,7 +60,7 @@ class NERDataset(Dataset):
         # 构造 labels，复制 input_ids
         labels_train = inputs_encoding_1["input_ids"].clone()
 
-        # 获取 assistant 的 token id
+        # 获取 assistant模板中的起始token id
         if self.template_name =="qwen":
             output_start_token_id = self.tokenizer.convert_tokens_to_ids("assistant")
         elif self.template_name =="llama":
@@ -78,13 +78,12 @@ class NERDataset(Dataset):
                     output_start_pos = output_start_positions[0]
                 elif self.template_name == "llama":
                     output_start_pos = output_start_positions[1]
-                # 将训练有效位置设为1
-                
+                # 将训练有效位置设为1               
                 target_mask[i, output_start_pos + 2 : inputs_encoding_1["input_ids"].shape[1] ] = 1  # +2 跳过 assistant和\n  或者INST和]
         # 把 padding 部分替换成 -100
         labels_train[target_mask == 0] = -100
             
-        ##在推理的时候，不需要对真实标签进行编码，直接传回来真实标签的字符串形式就行了，这块还需要再改一改
+        ##在推理的时候，不需要对真实标签进行编码，直接传回来真实标签的字符串形式
         inputs_2 = [x + " " + y for x, y in zip(systems, texts)]
         if self.template_name == "qwen":
             labels_test = [item[:-14] for item in outputs]##去除gold_label中带有模板的内容
@@ -93,19 +92,18 @@ class NERDataset(Dataset):
         inputs_encoding_2 = self.tokenizer(
             inputs_2,
             add_special_tokens=True,
-            #max_len= max_length,
             padding = True,
             truncation = True,
             return_tensors = "pt",
             padding_side='left'
         )
         return (
-            inputs_encoding_1["input_ids"],
-            inputs_encoding_1["attention_mask"],
-            labels_train,
-            inputs_encoding_2["input_ids"],
-            inputs_encoding_2["attention_mask"],
-            labels_test
+            inputs_encoding_1["input_ids"],##训练需要
+            inputs_encoding_1["attention_mask"],#训练需要
+            labels_train,#训练需要
+            inputs_encoding_2["input_ids"],#推理需要
+            inputs_encoding_2["attention_mask"],#推理需要
+            labels_test#推理需要
         )
     
 
@@ -148,7 +146,7 @@ def create_dataloader(hypernum):
         for name, dataset in test_datasets.items()
     }
 
-    # ========== 新增：统计样本量 ==========
+    # ========== 统计样本量 ==========
     print(f"[Train] total samples: {len(full_train_dataset)}")
     for name, loader in dev_loaders.items():
         print(f"[Dev]   {name}: {len(loader.dataset)} samples")
@@ -161,7 +159,7 @@ def create_dataloader(hypernum):
 
 if __name__ == '__main__':
     # 加载配置
-    hypernum = Hypernum.from_yaml("./config/config.yaml")
+    hypernum = Hypernum.from_yaml("./configs/config.yaml")
     tokenizer = AutoTokenizer.from_pretrained(hypernum.model_path)
     # 获取数据加载器字典
     train_loader, dev_loaders, test_loaders = create_dataloader(hypernum)
