@@ -1,0 +1,35 @@
+data_dir: "data"
+dataset_names:
+  # - bc2gm
+  # - bc4chemd
+  # - bc5cdr
+  # - genia
+  - ncbi
+  # - bc5cdr
+  # - BioNLP11ID_chem
+model_path: "/home/model/Qwen2.5-7B"
+batch_size: 4
+template_name: "qwen"
+epochs: 15
+gradient_checkpointing: True
+##generate参数
+max_new_tokens: 100
+num_beams: 4
+do_sample: True
+top_p: 0.6
+top_k: 20
+early_stopping: True
+##lora微调参数设计
+r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+lr: 5.0e-5
+
+dev_pre_path: "./log/dev_outputs_{dataset}_pre.txt"
+dev_clean_path: "./log/dev_outputs_{dataset}_clean.txt"
+
+test_pre_path: "./log/test_outputs_{dataset}_pre.txt"
+test_clean_path: "./log/test_outputs_{dataset}_clean.txt"
+
+save_path: "./save_pth/best_model_overall.pth"

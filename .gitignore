@@ -1,0 +1,4 @@
+##忽略下面这三个文件
+log/
+save_pth/
+swanlog/
